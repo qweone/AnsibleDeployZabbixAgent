@@ -1,0 +1,29 @@
+---
+- hosts: socket5_virginia
+  vars:
+    zabbix_proxy_ip: 216.75.xx.xx
+    zabbix_proxy_name: zabbix_proxy_cari
+    Hostname: "{{ ansible_host }}"
+    host_connect_ip: "{{ ansible_host }}"
+
+  tasks:
+  - name: add group "zabbix"
+    group: name=zabbix
+
+  - name: add user "zabbix"
+    user: name=zabbix group=zabbix home=/sbin/nologin createhome=no
+        
+  - name: unarchive zabbix agent to hosts
+    unarchive: src="/home/deploy/zabbix_agent/zabbix_agent.tar.gz" dest="/usr/local/"
+        
+  - name: add zabbix server in /etc/hosts       
+    lineinfile: dest=/etc/hosts line="{{ zabbix_proxy_ip }} {{ zabbix_proxy_name }}" state=present
+
+  - name: Configure zabbix agent
+    template: src=/home/deploy/zabbix_agent/zabbix_agentd.conf dest=/usr/local/zabbix/etc/zabbix_agentd.conf
+    notify: start zabbix
+        
+  handlers:
+    - name: start zabbix
+      command: /usr/local/zabbix/sbin/zabbix_agentd -c /usr/local/zabbix/etc/zabbix_agentd.conf
+
